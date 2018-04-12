@@ -141,7 +141,7 @@ SECP256K1_API int secp256k1_bulletproof_rangeproof_rewind(
     unsigned char* blind,
     const unsigned char* proof,
     size_t plen,
-    size_t min_value,
+    uint64_t min_value,
     const secp256k1_pedersen_commitment* commit,
     const secp256k1_generator* value_gen,
     const unsigned char* nonce,
