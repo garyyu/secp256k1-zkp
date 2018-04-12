@@ -5076,6 +5076,10 @@ void run_ecdsa_openssl(void) {
 # include "modules/surjection/tests_impl.h"
 #endif
 
+#ifdef ENABLE_MODULE_AGGSIG
+# include "modules/aggsig/tests_impl.h"
+#endif
+
 int main(int argc, char **argv) {
     unsigned char seed16[16] = {0};
     unsigned char run32[32] = {0};
@@ -5218,6 +5222,10 @@ int main(int argc, char **argv) {
 
 #ifdef ENABLE_MODULE_SURJECTIONPROOF
     run_surjection_tests();
+#endif
+
+#ifdef ENABLE_MODULE_AGGSIG
+    run_aggsig_tests();
 #endif
 
     secp256k1_rand256(run32);
