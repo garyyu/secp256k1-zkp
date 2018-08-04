@@ -188,21 +188,36 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_pedersen_blind_generato
   size_t n_inputs
 );
 
-/** Converts a pedersent commit to a pubkey
+/** Converts a Pedersen commitment to a pubkey
  *
- * Returns 1: Public key succesfully computed.
+ * Returns 1: Public key successfully computed.
  *         0: Error.
-*
+ *
  * In:                 ctx: pointer to a context object
- *                   commit: pointer to a single commit
- * Out:              pubkey: resulting pubkey
+ *                  commit: pointer to a single commit
+ * Out:             pubkey: resulting pubkey
  *
  */
-
 SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_pedersen_commitment_to_pubkey(
   const secp256k1_context* ctx,
   secp256k1_pubkey* pubkey,
   const secp256k1_pedersen_commitment* commit
+);
+
+/** Converts a pubkey to a Pedersen commitment (v=0)
+ *
+ * Returns 1: Pedersen commitment successfully computed.
+ *         0: Error.
+ *
+ * In:                 ctx: pointer to a context object
+ *                  pubkey: pointer to pubkey
+ * Out:             commit: resulting single commitment
+ *
+ */
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_pedersen_pubkey_to_commitment(
+        const secp256k1_context* ctx,
+        secp256k1_pedersen_commitment* commit,
+        const secp256k1_pubkey* pubkey
 );
 
 # ifdef __cplusplus

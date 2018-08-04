@@ -86,6 +86,7 @@ int secp256k1_pedersen_minus_commit(const secp256k1_context* ctx, secp256k1_pede
     return secp256k1_pedersen_commit_generic(ctx, commit, blind, value, value_gen, blind_gen, 1);
 }
 
+/* Just suppose this input Pedersen commitment comes from 'r*G+0*H', then it's also a public key */
 int secp256k1_pedersen_commitment_to_pubkey(const secp256k1_context* ctx, secp256k1_pubkey* pubkey, const secp256k1_pedersen_commitment* commit) {
     secp256k1_ge Q;
     secp256k1_fe fe;
@@ -100,6 +101,20 @@ int secp256k1_pedersen_commitment_to_pubkey(const secp256k1_context* ctx, secp25
         secp256k1_ge_neg(&Q, &Q);
     }
     secp256k1_pubkey_save(pubkey, &Q);
+    secp256k1_ge_clear(&Q);
+    return 1;
+}
+
+/* Pedersen commitment of 'r*G+0*H', public key = 'r*G' */
+int secp256k1_pedersen_pubkey_to_commitment(const secp256k1_context* ctx, secp256k1_pedersen_commitment* commit, const secp256k1_pubkey* pubkey) {
+    secp256k1_ge Q;
+    VERIFY_CHECK(ctx != NULL);
+    ARG_CHECK(pubkey != NULL);
+    ARG_CHECK(commit != NULL);
+    memset(commit, 0, sizeof(*commit));
+
+    secp256k1_pubkey_load(ctx, &Q, pubkey);
+    secp256k1_pedersen_commitment_save(commit, &Q);
     secp256k1_ge_clear(&Q);
     return 1;
 }
