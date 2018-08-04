@@ -25,6 +25,8 @@ aclocal.m4
 autom4te.cache/
 config.log
 config.status
+.DS_Store
+.idea/
 *.tar.gz
 *.la
 libtool
