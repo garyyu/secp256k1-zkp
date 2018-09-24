@@ -109,7 +109,7 @@ static int secp256k1_wnaf_const(int *wnaf, secp256k1_scalar s, int w, int size) 
         wnaf[word++] = u_last * global_sign;
 
         u_last = u;
-    } while(word * w < size);
+    }
     wnaf[word] = u * global_sign;
 
     VERIFY_CHECK(secp256k1_scalar_is_zero(&s));
@@ -125,12 +125,9 @@ static void secp256k1_ecmult_const(secp256k1_gej *r, const secp256k1_ge *a, cons
     int skew_1;
 #ifdef USE_ENDOMORPHISM
     secp256k1_ge pre_a_lam[ECMULT_TABLE_SIZE(WINDOW_A)];
-    int wnaf_1[1 + WNAF_SIZE(128, WINDOW_A - 1)];
-    int wnaf_lam[1 + WNAF_SIZE(128, WINDOW_A - 1)];
+    int wnaf_lam[1 + WNAF_SIZE(WINDOW_A - 1)];
     int skew_lam;
     secp256k1_scalar q_1, q_lam;
-#else
-    int wnaf_1[1 + WNAF_SIZE(256, WINDOW_A - 1)];
 #endif
     int wnaf_1[1 + WNAF_SIZE(WINDOW_A - 1)];
 

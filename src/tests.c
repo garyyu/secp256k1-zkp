@@ -738,31 +738,6 @@ void scalar_test(void) {
     random_scalar_order_test(&s2);
     secp256k1_scalar_get_b32(c, &s2);
 
-    /* Test secp256k1_scalar_cmp_var and secp256k1_scalar_numsub */
-    {
-        int cmp_secp;
-        int cmp_memc;
-        unsigned char c1[32];
-        secp256k1_scalar sub;
-        secp256k1_scalar_get_b32(c1, &s1);
-
-        cmp_secp = secp256k1_scalar_cmp_var(&s1, &s2);
-        cmp_memc = memcmp(c1, c, 32);
-        CHECK((cmp_secp < 0 && cmp_memc < 0) ||
-              (cmp_secp > 0 && cmp_memc > 0) ||
-              (cmp_secp == 0 && cmp_memc == 0));
-
-        if (cmp_secp > 0) {
-            secp256k1_scalar_numsub(&sub, &s1, &s2);
-            secp256k1_scalar_negate(&s2, &s2);
-        } else {
-            secp256k1_scalar_numsub(&sub, &s2, &s1);
-            secp256k1_scalar_negate(&s1, &s1);
-        }
-        secp256k1_scalar_add(&s1, &s1, &s2);
-        CHECK(secp256k1_scalar_eq(&s1, &sub));
-    }
-
 #ifndef USE_NUM_NONE
     secp256k1_scalar_get_num(&snum, &s);
     secp256k1_scalar_get_num(&s1num, &s1);

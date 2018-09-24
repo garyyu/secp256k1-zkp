@@ -112,7 +112,7 @@ AC_ARG_ENABLE(experimental,
 AC_ARG_ENABLE(exhaustive_tests,
     AS_HELP_STRING([--enable-exhaustive-tests],[compile exhaustive tests (default is yes)]),
     [use_exhaustive_tests=$enableval],
-    [use_exhaustive_tests=no])
+    [use_exhaustive_tests=yes])
 
 AC_ARG_ENABLE(endomorphism,
     AS_HELP_STRING([--enable-endomorphism],[enable endomorphism (default is no)]),
@@ -168,11 +168,6 @@ AC_ARG_ENABLE(jni,
     AS_HELP_STRING([--enable-jni],[enable libsecp256k1_jni (default is no)]),
     [use_jni=$enableval],
     [use_jni=no])
-
-AC_ARG_ENABLE(module_surjectionproof,
-    AS_HELP_STRING([--enable-module-surjectionproof],[enable surjection proof module (default is no)]),
-    [enable_module_surjectionproof=$enableval],
-    [enable_module_surjectionproof=no])
 
 AC_ARG_ENABLE(module_surjectionproof,
     AS_HELP_STRING([--enable-module-surjectionproof],[enable surjection proof module (default is no)]),
@@ -576,9 +571,6 @@ if test x"$enable_experimental" = x"yes"; then
 else
   if test x"$enable_module_ecdh" = x"yes"; then
     AC_MSG_ERROR([ECDH module is experimental. Use --enable-experimental to allow.])
-  fi
-  if test x"$enable_module_aggsig" = x"yes"; then
-    AC_MSG_ERROR([Aggregate signature module is experimental. Use --enable-experimental to allow.])
   fi
   if test x"$set_asm" = x"arm"; then
     AC_MSG_ERROR([ARM assembly optimization is experimental. Use --enable-experimental to allow.])
