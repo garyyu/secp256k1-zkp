@@ -75,6 +75,19 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_pedersen_commit(
   const secp256k1_generator *blind_gen
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(5) SECP256K1_ARG_NONNULL(6);
 
+
+/** Generate a Pedersen commitment.
+ *  Same as secp256k1_pedersen_commit() except with 'r*G - v*H', instead of 'r*G + v*H'.
+ */
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_pedersen_minus_commit(
+        const secp256k1_context* ctx,
+        secp256k1_pedersen_commitment *commit,
+        const unsigned char *blind,
+        uint64_t value,
+        const secp256k1_generator *value_gen,
+        const secp256k1_generator *blind_gen
+) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(5) SECP256K1_ARG_NONNULL(6);
+
 /** Computes the sum of multiple positive and negative blinding factors.
  *  Returns 1: Sum successfully computed.
  *          0: Error. A blinding factor is larger than the group order
@@ -175,21 +188,36 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_pedersen_blind_generato
   size_t n_inputs
 );
 
-/** Converts a pedersent commit to a pubkey
+/** Converts a Pedersen commitment to a pubkey
  *
- * Returns 1: Public key succesfully computed.
+ * Returns 1: Public key successfully computed.
  *         0: Error.
-*
+ *
  * In:                 ctx: pointer to a context object
- *                   commit: pointer to a single commit
- * Out:              pubkey: resulting pubkey
+ *                  commit: pointer to a single commit
+ * Out:             pubkey: resulting pubkey
  *
  */
-
 SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_pedersen_commitment_to_pubkey(
   const secp256k1_context* ctx,
   secp256k1_pubkey* pubkey,
   const secp256k1_pedersen_commitment* commit
+);
+
+/** Converts a pubkey to a Pedersen commitment (v=0)
+ *
+ * Returns 1: Pedersen commitment successfully computed.
+ *         0: Error.
+ *
+ * In:                 ctx: pointer to a context object
+ *                  pubkey: pointer to pubkey
+ * Out:             commit: resulting single commitment
+ *
+ */
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_pedersen_pubkey_to_commitment(
+        const secp256k1_context* ctx,
+        secp256k1_pedersen_commitment* commit,
+        const secp256k1_pubkey* pubkey
 );
 
 # ifdef __cplusplus
