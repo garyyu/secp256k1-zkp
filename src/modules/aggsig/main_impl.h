@@ -69,16 +69,20 @@ static void secp256k1_compute_prehash(const secp256k1_context *ctx, unsigned cha
     size_t buflen = sizeof(buf);
     secp256k1_sha256 hasher;
     secp256k1_sha256_initialize(&hasher);
+
+    /* Encode nonce */
+    secp256k1_fe_get_b32(buf, nonce_ge_x);
+    secp256k1_sha256_write(&hasher, buf, 32);
+
     /* Encode pubkeys */
     for (i = 0; i < n_pubkeys; i++) {
         CHECK(secp256k1_ec_pubkey_serialize(ctx, buf, &buflen, &pubkeys[i], SECP256K1_EC_COMPRESSED));
         secp256k1_sha256_write(&hasher, buf, sizeof(buf));
     }
-    /* Encode nonce */
-    secp256k1_fe_get_b32(buf, nonce_ge_x);
-    secp256k1_sha256_write(&hasher, buf, 32);
+
     /* Encode message */
     secp256k1_sha256_write(&hasher, msghash32, 32);
+
     /* Finish */
     secp256k1_sha256_finalize(&hasher, output);
 }
@@ -134,7 +138,7 @@ int secp256k1_aggsig_generate_nonce_single(const secp256k1_context* ctx, secp256
     do {
         secp256k1_rfc6979_hmac_sha256_generate(rng, data, 32);
         secp256k1_scalar_set_b32(secnonce, data, &retry);
-        retry |= secp256k1_scalar_is_zero(secnonce);
+        retry = secp256k1_scalar_is_zero(secnonce);
     } while (retry); /* This branch true is cryptographically unreachable. Requires sha256_hmac output > Fp. */
     secp256k1_ecmult_gen(&ctx->ecmult_gen_ctx, pubnonce, secnonce);
     memset(data, 0, 32);  /* TODO proper clear */
@@ -276,10 +280,10 @@ int secp256k1_aggsig_sign_single(const secp256k1_context* ctx,
     }
 
     /* finalize */
-    secp256k1_scalar_get_b32(sig64, &sec);
     secp256k1_ge_set_gej(&final, &pubnonce_j);
     secp256k1_fe_normalize_var(&final.x);
-    secp256k1_fe_get_b32(sig64 + 32, &final.x);
+    secp256k1_fe_get_b32(sig64, &final.x);
+    secp256k1_scalar_get_b32(sig64 + 32, &sec);
 
     secp256k1_scalar_clear(&sec);
 
@@ -373,10 +377,10 @@ int secp256k1_aggsig_combine_signatures(const secp256k1_context* ctx, secp256k1_
         secp256k1_gej_neg(&aggctx->pubnonce_sum, &aggctx->pubnonce_sum);
     }
 
-    secp256k1_scalar_get_b32(sig64, &s);
     secp256k1_ge_set_gej(&final, &aggctx->pubnonce_sum);
     secp256k1_fe_normalize_var(&final.x);
-    secp256k1_fe_get_b32(sig64 + 32, &final.x);
+    secp256k1_fe_get_b32(sig64, &final.x);
+    secp256k1_scalar_get_b32(sig64 + 32, &s);
     return 1;
 }
 
@@ -403,7 +407,7 @@ int secp256k1_aggsig_add_signatures_single(const secp256k1_context* ctx,
     /* Add signature portions together */
     secp256k1_scalar_set_int(&s, 0);
     for (i = 0; i < num_sigs; i++){
-        secp256k1_scalar_set_b32(&tmp, sigs[i], &overflow);
+        secp256k1_scalar_set_b32(&tmp, sigs[i] + 32, &overflow);
         if (overflow) {
             return 0;
         }
@@ -418,10 +422,10 @@ int secp256k1_aggsig_add_signatures_single(const secp256k1_context* ctx,
         secp256k1_gej_neg(&pubnonce_total_j, &pubnonce_total_j);
     }
 
-    secp256k1_scalar_get_b32(sig64, &s);
     secp256k1_ge_set_gej(&final, &pubnonce_total_j);
     secp256k1_fe_normalize_var(&final.x);
-    secp256k1_fe_get_b32(sig64 + 32, &final.x);
+    secp256k1_fe_get_b32(sig64, &final.x);
+    secp256k1_scalar_get_b32(sig64 + 32, &s);
     return 1;
 }
 
@@ -463,14 +467,14 @@ int secp256k1_aggsig_verify(const secp256k1_context* ctx, secp256k1_scratch_spac
         return 0;
     }
 
-    /* extract s */
-    secp256k1_scalar_set_b32(&g_sc, sig64, &overflow);
-    if (overflow) {
+    /* extract R */
+    if (!secp256k1_fe_set_b32(&r_x, sig64)) {
         return 0;
     }
 
-    /* extract R */
-    if (!secp256k1_fe_set_b32(&r_x, sig64 + 32)) {
+    /* extract s */
+    secp256k1_scalar_set_b32(&g_sc, sig64 + 32, &overflow);
+    if (overflow) {
         return 0;
     }
 
@@ -538,14 +542,14 @@ int secp256k1_aggsig_verify_single(
     ARG_CHECK(msg32 != NULL);
     ARG_CHECK(pubkey != NULL);
 
-    /* extract s */
-    secp256k1_scalar_set_b32(&g_sc, sig64, &overflow);
-    if (overflow) {
+    /* extract R */
+    if (!secp256k1_fe_set_b32(&r_x, sig64)) {
         return 0;
     }
 
-    /* extract R */
-    if (!secp256k1_fe_set_b32(&r_x, sig64 + 32)) {
+    /* extract s */
+    secp256k1_scalar_set_b32(&g_sc, sig64 + 32, &overflow);
+    if (overflow) {
         return 0;
     }
 
