@@ -76,6 +76,58 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_pedersen_commit(
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(5) SECP256K1_ARG_NONNULL(6);
 
 
+/** Calculates the blinding factor q = Hash(m, p*S), used in the non-interactive input commitment q*P+v*H
+ * Input:
+ *       m: an unique message to a transaction
+ *       p: private key
+ *       S: non-interactive transaction sender's public blinding
+ * Output:
+ *       q: Hash(m, p*S)
+ *
+ */
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_blind_non_interactive(
+        const secp256k1_context* ctx,
+        unsigned char *q32,
+        const unsigned char *seckey32,
+        const secp256k1_pubkey* pubkey,
+        const unsigned char *msg32
+) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4) SECP256K1_ARG_NONNULL(5);
+
+
+/** Generate a pedersen commitment from a value, a sender's private blinding factor (b), a recipient's public key (P),
+ *    and an unique message (m).
+ *    Note:
+ *        q = Hash(m, b*P)
+ *        b*P = b*(p*G) = p*B, and p is recipient's private key, B is b*G.
+ *        r*G = q*P = q*p*G = (q*p)*G, and q*p is recipient's private blinding for this transaction.
+ *
+ *  Returns 1: Commitment successfully created.
+ *          0: Error. The blinding factor is larger than the group order
+ *             (probability for random 32 byte number < 2^-127) or results in the
+ *             point at infinity. Retry with a different factor.
+ *  In:     ctx:        pointer to a context object (cannot be NULL)
+ *          blind:      pointer to a 32-byte blinding factor (cannot be NULL)
+ *          pubkey_rx:  public key of recipient (cannot be NULL)
+ *          msg32:      a unique message to this transaction (cannot be NULL)
+ *          value:      unsigned 64-bit integer value to commit to.
+ *          value_gen:  value generator 'h'
+ *  Out:    commit:     pointer to the commitment (cannot be NULL)
+ *                      commit = r*G + v*H = q*P + v*H
+ *          q32:        q = Hash(m, b*P)
+ *
+ *  Blinding factors can be generated and verified in the same way as secp256k1 private keys for ECDSA.
+ */
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_tx_pedersen_commit(
+        const secp256k1_context* ctx,
+        secp256k1_pedersen_commitment *commit,
+        unsigned char *q32,
+        const unsigned char *blind,
+        const secp256k1_pubkey* pubkey_rx,
+        const unsigned char *msg32,
+        uint64_t value,
+        const secp256k1_generator *value_gen
+) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4) SECP256K1_ARG_NONNULL(5) SECP256K1_ARG_NONNULL(6) SECP256K1_ARG_NONNULL(8);
+
 /** Generate a Pedersen commitment.
  *  Same as secp256k1_pedersen_commit() except with 'r*G - v*H', instead of 'r*G + v*H'.
  */

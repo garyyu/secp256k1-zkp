@@ -76,6 +76,111 @@ static int secp256k1_pedersen_commit_generic(const secp256k1_context* ctx, secp2
     return ret;
 }
 
+// q = Hash(m, b*P)
+int secp256k1_blind_non_interactive(
+        const secp256k1_context* ctx,
+        unsigned char *q32,
+        const unsigned char *seckey32,
+        const secp256k1_pubkey* pubkey,
+        const unsigned char *msg32
+) {
+    secp256k1_sha256 hasher;
+    secp256k1_pubkey tmp_pubkey;
+    unsigned char buf[33];
+    size_t buflen = sizeof(buf);
+
+    VERIFY_CHECK(ctx != NULL);
+    ARG_CHECK(q32 != NULL);
+    ARG_CHECK(seckey32 != NULL);
+    ARG_CHECK(msg32 != NULL);
+    ARG_CHECK(pubkey != NULL);
+
+    secp256k1_sha256_initialize(&hasher);
+    secp256k1_sha256_write(&hasher, msg32, 32);
+
+    tmp_pubkey = *pubkey;
+    if (secp256k1_ec_pubkey_tweak_mul(ctx, &tmp_pubkey, seckey32) != 1) {
+        return 0;
+    }
+    if (secp256k1_ec_pubkey_serialize(ctx, buf, &buflen, &tmp_pubkey, SECP256K1_EC_COMPRESSED) != 1) {
+        return 0;
+    }
+    secp256k1_sha256_write(&hasher, buf, buflen);
+    secp256k1_sha256_finalize(&hasher, q32);
+    return 1;
+}
+
+
+/* Generates a pedersen commitment from a value, a sender's private blinding factor (b), a recipient's public key (P), and an unique message (m).
+ *
+ *    q = Hash(m, b*P)
+ *    commit = r*G + v*H = q*P + v*H
+ *    Note:
+ *        b*P = b*(p*G) = p*B, and p is recipient's private key, B is b*G.
+ *        r*G = q*P = q*p*G = (q*p)*G, and q*p is recipient's private blinding for this transaction.
+ */
+int secp256k1_tx_pedersen_commit(
+        const secp256k1_context* ctx,
+        secp256k1_pedersen_commitment *commit,
+        unsigned char *q32,
+        const unsigned char *blind,
+        const secp256k1_pubkey* pubkey_rx,
+        const unsigned char *msg32,
+        uint64_t value,
+        const secp256k1_generator *value_gen
+) {
+    secp256k1_sha256 hasher;
+    int overflow;
+    secp256k1_pubkey tmp_pubkey;
+    unsigned char buf[33];
+    size_t buflen = sizeof(buf);
+
+    secp256k1_ge value_genp;
+    secp256k1_ge blind_genp;
+    secp256k1_gej rj;
+    secp256k1_ge r;
+    secp256k1_scalar sec;
+    int ret = 0;
+
+    VERIFY_CHECK(ctx != NULL);
+    ARG_CHECK(commit != NULL);
+    ARG_CHECK(q32 != NULL);
+    ARG_CHECK(blind != NULL);
+    ARG_CHECK(value_gen != NULL);
+    ARG_CHECK(msg32 != NULL);
+    ARG_CHECK(pubkey_rx != NULL);
+
+    secp256k1_sha256_initialize(&hasher);
+    secp256k1_sha256_write(&hasher, msg32, 32);
+
+    tmp_pubkey = *pubkey_rx;
+    if (secp256k1_ec_pubkey_tweak_mul(ctx, &tmp_pubkey, blind) != 1) {
+        return 0;
+    }
+    if (secp256k1_ec_pubkey_serialize(ctx, buf, &buflen, &tmp_pubkey, SECP256K1_EC_COMPRESSED) != 1) {
+        return 0;
+    }
+    secp256k1_sha256_write(&hasher, buf, buflen);
+    secp256k1_sha256_finalize(&hasher, q32);
+
+    secp256k1_generator_load(&value_genp, value_gen);
+    secp256k1_pubkey_load(ctx, &blind_genp, pubkey_rx);
+    secp256k1_scalar_set_b32(&sec, q32, &overflow);
+    if (!overflow) {
+        secp256k1_pedersen_ecmult_generic(&rj, &sec, value, &value_genp, &blind_genp, 0);
+        if (!secp256k1_gej_is_infinity(&rj)) {
+            secp256k1_ge_set_gej(&r, &rj);
+            secp256k1_pedersen_commitment_save(commit, &r);
+            ret = 1;
+        }
+        secp256k1_gej_clear(&rj);
+        secp256k1_ge_clear(&r);
+    }
+    secp256k1_scalar_clear(&sec);
+    return ret;
+}
+
+
 /* Generates a pedersen commitment: *commit = blind * G + value * G2. The blinding factor is 32 bytes.*/
 int secp256k1_pedersen_commit(const secp256k1_context* ctx, secp256k1_pedersen_commitment *commit, const unsigned char *blind, uint64_t value, const secp256k1_generator* value_gen, const secp256k1_generator* blind_gen) {
     return secp256k1_pedersen_commit_generic(ctx, commit, blind, value, value_gen, blind_gen, 0);
