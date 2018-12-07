@@ -179,6 +179,21 @@ SECP256K1_API int secp256k1_aggsig_add_signatures_single(
     const secp256k1_pubkey* pubnonce_total
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(5) SECP256K1_WARN_UNUSED_RESULT;
 
+/** Get R from Signature
+ *
+ *  Returns: 1 on success, 0 on failure
+ *  Args:    ctx: an existing context object, initialized for signing (cannot be NULL)
+ *  In:      sig64: signature (cannot be NULL)
+ *           use_neg: whether to use negative point
+ *  Out:     pubnonce: the public nonce R (cannot be NULL)
+ */
+SECP256K1_API int secp256k1_aggsig_get_pubnonce_from_signature(
+        const secp256k1_context* ctx,
+        const unsigned char *sig64,
+        secp256k1_pubkey *pubnonce,
+        const int use_neg
+) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_WARN_UNUSED_RESULT;
+
 
 /** Verify a single-signer signature, without a stored context 
  *

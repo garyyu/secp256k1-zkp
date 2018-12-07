@@ -513,6 +513,32 @@ static int secp256k1_aggsig_verify_callback_single(secp256k1_scalar *sc, secp256
     return 1;
 }
 
+int secp256k1_aggsig_get_pubnonce_from_signature(
+        const secp256k1_context* ctx,
+        const unsigned char *sig64,
+        secp256k1_pubkey *pubnonce,
+        const int use_neg
+){
+    secp256k1_fe r_x;
+    secp256k1_ge tmp_ge;
+
+    VERIFY_CHECK(ctx != NULL);
+    ARG_CHECK(secp256k1_ecmult_context_is_built(&ctx->ecmult_ctx));
+    ARG_CHECK(sig64 != NULL);
+    ARG_CHECK(pubnonce != NULL);
+
+    /* extract R */
+    if (!secp256k1_fe_set_b32(&r_x, sig64)) {
+        return 0;
+    }
+    secp256k1_ge_set_xquad(&tmp_ge, &r_x);
+    if (use_neg != 0) {
+        secp256k1_ge_neg(&tmp_ge, &tmp_ge);
+    }
+    secp256k1_pubkey_save(pubnonce, &tmp_ge);
+    return 1;
+}
+
 int secp256k1_aggsig_verify_single(
     const secp256k1_context* ctx,
     const unsigned char *sig64,
